@@ -1,18 +1,18 @@
-name: Terraform Validation
+name: Terraform Apply
 
 on:
   push:
     branches:
-      - develop
-
-  pull_request:
-    branches:
       - master
 
 jobs:
-  validate:
+  apply:
+    name: Apply Terraform
 
     runs-on: ubuntu-latest
+
+    environment:
+      name: production
 
     permissions:
       contents: read
@@ -37,26 +37,11 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
-
       - name: Terraform Validate
         run: terraform validate
 
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      - name: Convert Plan to Text
-        run: terraform show -no-color tfplan > plan.txt
-
-      - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-plan
-          path: tfplan
-
-      - name: Upload Human Readable Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-plan-text
-          path: plan.txt
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
