@@ -8,17 +8,26 @@ on:
   pull_request:
     branches:
       - master
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
-  validate:
-
+  terraform-validation:
+    name: Terraform Validation
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
+    defaults:
+      run:
+        shell: bash
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -35,28 +44,32 @@ jobs:
           aws-region: us-east-1
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -input=false
 
       - name: Terraform Format Check
-        run: terraform fmt -check -recursive
+        run: terraform fmt -check -diff -recursive
 
       - name: Terraform Validate
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan -input=false -out=tfplan
 
-      - name: Convert Plan to Text
+      - name: Generate Human Readable Plan
         run: terraform show -no-color tfplan > plan.txt
 
-      - name: Upload Terraform Plan
+      - name: Upload Terraform Plan Artifact
         uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
-          path: tfplan
+          path: |
+            tfplan
+            plan.txt
+          retention-days: 7
 
-      - name: Upload Human Readable Plan
-        uses: actions/upload-artifact@v4
+      - name: Publish Terraform Plan to PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
         with:
-          name: terraform-plan-text
+          header: terraform-plan
           path: plan.txt
