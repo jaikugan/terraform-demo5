@@ -16,7 +16,7 @@ resource "aws_instance" "main" {
 
   tags = {
 
-    Name = "Terraform-Server"
+    Name = "Terraform-rafik"
 
   }
 
